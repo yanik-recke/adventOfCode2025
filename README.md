@@ -1,4 +1,4 @@
-# [Advent of Code](https://adventofcode.com/2025/) 2025 in Python only!
+# [Advent of Code](https://adventofcode.com/2025/) 2025!
 
 [2021](https://github.com/yanik-recke/adventOfCode2021)  
 [2022](https://github.com/yanik-recke/adventOfCode2022)  
