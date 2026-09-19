@@ -1,2 +1,4 @@
 *.txt
 .venv
+
+tst.py
