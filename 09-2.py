@@ -25,7 +25,7 @@ def edge_enters_interior(e: tuple[tuple[int, int], tuple[int, int]], minx, maxx,
             if lowery >= miny and lowery < maxy and highery > maxy:
                 return True
 
-            if lowery <= miny and lowery <= maxy and highery > miny and highery <= maxy:
+            if lowery >= miny and lowery <= maxy and highery > miny and highery <= maxy:
                 return True
             
     # horizontal edge
