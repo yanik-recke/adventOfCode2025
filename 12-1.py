@@ -12,13 +12,10 @@ areas: list[tuple[tuple[int, ...], list[int]]] = [(tuple(map(int, l.split(":")[0
 shapes: list[Shape] = [Shape([(j, i) for j, c in enumerate(l) for _, x in enumerate(c) if x == "#"]) for i, l in enumerate(batched([l for l in Path("in12.txt").read_text().splitlines() if l != "" and ":" not in l], 3))]
 
 fits = 0
-to_calc = []
-
 for area in areas:
-    if (sum(area[1]) * 9) <= area[0][0] * area[0][1]:
-        fits += 1
-    elif sum(len(shapes[idx].recs) * rec for idx, rec in enumerate(area[1])) < area[0][0] * area[0][1]:
-        to_calc.append(area)
+    if (sum(area[1]) * 9) <= area[0][0] * area[0][1]: fits += 1
+
+to_calc = [area for area in areas if sum(len(shapes[idx].recs) * rec for idx, rec in enumerate(area[1])) < area[0][0] * area[0][1] and not ((sum(area[1]) * 9) <= area[0][0] * area[0][1])]
 
 print(len(to_calc)) # = 0
 print(fits)
