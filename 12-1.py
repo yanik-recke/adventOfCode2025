@@ -1,4 +1,4 @@
-from z3 import Solver, Int, Or
+from z3 import Solver, Int, Or, And, sat
 from pathlib import Path
 from dataclasses import dataclass
 from itertools import combinations, product
@@ -42,8 +42,42 @@ for l in lines[1:]:
 
 shapes.append(Shape(coords))
 
+# removing areas where area is bigger than
+# the amount of shapes * 9 (their area)
+fits = 0
+not_fits = 0
+to_calc = []
+for area in areas:
+    calarea = area[0] * area[1]
+
+    numshapes = 0
+    hashtags = 0
+
+    for idx, rec in enumerate(area[2]):
+        numshapes += rec
+        hashtags += len(shapes[idx].recs) * rec
+
+    if (numshapes * 9) <= calarea:
+        fits += 1
+    elif hashtags < calarea:
+        to_calc.append(area)
+
+    if hashtags > calarea:
+        not_fits += 1
+
+
+print(len(to_calc)) # = 0
+print(fits)
+
+exit(0)
+
+areas = to_calc
+
+# turns out the solver was not needed, I am leaving it here anyways because it 
+# was a lot of work
 for area in areas:
     s = Solver()
+    s.set("timeout", 10000)
     h_area, w_area = area[0], area[1]
     indeces = area[2]
 
@@ -76,10 +110,50 @@ for area in areas:
     p = [[Int(f"p_{i}{j}") for j in range(len(ishapes[i].recs))] for i in range(len(ishapes))]
     q = [[Int(f"q_{i}{j}") for j in range(len(ishapes[i].recs))] for i in range(len(ishapes))]
 
-    for sidx, shape in enumerate(ishapes):
-        for ridx, (rx, ry) in enumerate(shape.recs):
-            s.add(p[sidx][ridx] == (x[sidx] + rx))
-            s.add(q[sidx][ridx] == (y[sidx] + ry))
+    for i, _ in enumerate(ishapes):
+        for j, _ in enumerate(p[i]):
+            s.add(p[i][j] >= 0, p[i][j] <= w_area)
+
+        for j, _ in enumerate(q[i]):
+            s.add(q[i][j] >= 0, q[i][j] <= h_area)
+    
+    # for sidx, shape in enumerate(ishapes):
+    #     for ridx, (rx, ry) in enumerate(shape.recs):
+    #         s.add(p[sidx][ridx] == (x[sidx] + rx))
+    #         s.add(q[sidx][ridx] == (y[sidx] + ry))
+
+    # rotation and flipping???
+    rotation_cheat_sheet_90 = {
+        (0,0): (2,0),
+        (1,0): (2,1),
+        (2,0): (2,2),
+        (0,1): (1,0),
+        (1,1): (1,1),
+        (2,1): (1,2),
+        (0,2): (0,0),
+        (1,2): (0,1),
+        (2,2): (0,2), 
+    }
+
+    def rotate(d: int, p: tuple[int, int]) -> tuple[int, int]:
+        if d == 90:
+            return rotation_cheat_sheet_90[p]
+        elif d == 180:
+            return rotation_cheat_sheet_90[rotation_cheat_sheet_90[p]]
+        elif d == 270:
+            return rotation_cheat_sheet_90[rotation_cheat_sheet_90[rotation_cheat_sheet_90[p]]]
+
+        raise Exception("Call only with 90, 180 or 270")
+
+    for sidx, _ in enumerate(ishapes):
+        # for x (p)
+        s.add(Or(
+                    And([(p[sidx][i] == (x[sidx] + ishapes[sidx].recs[i][0])) for i in range(len(ishapes[sidx].recs))] + [(q[sidx][i] == (y[sidx] + ishapes[sidx].recs[i][1])) for i in range(len(ishapes[sidx].recs))]),
+                    And([(p[sidx][i] == (x[sidx] + rotate(90, ishapes[sidx].recs[i])[0])) for i in range(len(ishapes[sidx].recs))] + [(q[sidx][i] == (y[sidx] + rotate(90, ishapes[sidx].recs[i])[1])) for i in range(len(ishapes[sidx].recs))]),
+                    And([(p[sidx][i] == (x[sidx] + rotate(180, ishapes[sidx].recs[i])[0])) for i in range(len(ishapes[sidx].recs))] + [(q[sidx][i] == (y[sidx] + rotate(180, ishapes[sidx].recs[i])[1])) for i in range(len(ishapes[sidx].recs))]),
+                    And([(p[sidx][i] == (x[sidx] + rotate(270, ishapes[sidx].recs[i])[0])) for i in range(len(ishapes[sidx].recs))] + [(q[sidx][i] == (y[sidx] + rotate(270, ishapes[sidx].recs[i])[1])) for i in range(len(ishapes[sidx].recs))])
+                )
+            )
     
     # none of the coordinates must overlap, so if 2,2 is occupied by shape 1
     # shapes 2, ..., i must not have any coordinate that is there
@@ -89,5 +163,13 @@ for area in areas:
         for a, b in product(range(len(ishapes[li].recs)), range(len(ishapes[ri].recs))):
             s.add(Or(p[li][a] != p[ri][b], q[li][a] != q[ri][b]))
 
-    # rotation and flipping???
-    
+    if s.check() == sat:
+        fits += 1
+        m = s.model()
+        print("Yippie")
+        for i in range(len(ishapes)):
+            print(
+                f"Rect {i}: x={m[x[i]]}, y={m[y[i]]}"
+            )
+    else:
+        print("No valid packing found.")
