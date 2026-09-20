@@ -1,54 +1,23 @@
 from z3 import Solver, Int, Or, And, sat
 from pathlib import Path
 from dataclasses import dataclass
-from itertools import combinations, product
-
-lines = [l for l in Path("areas.txt").read_text().splitlines()]
-areas: list[tuple[int, int, list[int]]] = []
-
-for l in lines: 
-    dim, i = l.split(":")
-    h, w = map(int, dim.split("x"))
-    indeces = list(map(int, i.strip().split(" ")))
-    areas.append((h, w, indeces))
-
-# shapes are always 3x3
+from itertools import combinations, product, batched
 
 @dataclass
 class Shape:
     h = w = 3
     recs: list[tuple[int, int]]
 
-
-lines = Path("in12.txt").read_text().splitlines()
-
-shape_idx = -1
-rowidx = 0
-shapes: list[Shape] = []
-coords: list[tuple[int, int]] = []
-
-for l in lines[1:]:
-    if ":" in l:
-        shapes.append(Shape(coords))
-        coords = []
-        rowidx = 0
-    elif l == "":
-        continue
-    else:
-        for i, c in enumerate(l):
-            if c == "#": coords.append((i, rowidx))
-
-        rowidx += 1
-
-shapes.append(Shape(coords))
+areas: list[tuple[tuple[int, ...], list[int]]] = [(tuple(map(int, l.split(":")[0].split("x"))), list(map(int, l.split(":")[1].strip().split(" ")))) for l in Path("areas.txt").read_text().splitlines()]
+shapes: list[Shape] = [Shape([(j, i) for j, c in enumerate(l) for _, x in enumerate(c) if x == "#"]) for i, l in enumerate(batched([l for l in Path("in12.txt").read_text().splitlines() if l != "" and ":" not in l], 3))]
 
 fits = 0
 to_calc = []
 
 for area in areas:
-    if (sum(area[2]) * 9) <= area[0] * area[1]:
+    if (sum(area[1]) * 9) <= area[0][0] * area[0][1]:
         fits += 1
-    elif sum(len(shapes[idx].recs) * rec for idx, rec in enumerate(area[2])) < area[0] * area[1]:
+    elif sum(len(shapes[idx].recs) * rec for idx, rec in enumerate(area[1])) < area[0][0] * area[0][1]:
         to_calc.append(area)
 
 print(len(to_calc)) # = 0
