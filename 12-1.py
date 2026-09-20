@@ -42,29 +42,14 @@ for l in lines[1:]:
 
 shapes.append(Shape(coords))
 
-# removing areas where area is bigger than
-# the amount of shapes * 9 (their area)
 fits = 0
-not_fits = 0
 to_calc = []
+
 for area in areas:
-    calarea = area[0] * area[1]
-
-    numshapes = 0
-    hashtags = 0
-
-    for idx, rec in enumerate(area[2]):
-        numshapes += rec
-        hashtags += len(shapes[idx].recs) * rec
-
-    if (numshapes * 9) <= calarea:
+    if (sum(area[2]) * 9) <= area[0] * area[1]:
         fits += 1
-    elif hashtags < calarea:
+    elif sum(len(shapes[idx].recs) * rec for idx, rec in enumerate(area[2])) < area[0] * area[1]:
         to_calc.append(area)
-
-    if hashtags > calarea:
-        not_fits += 1
-
 
 print(len(to_calc)) # = 0
 print(fits)
