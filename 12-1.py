@@ -17,7 +17,7 @@ for area in areas:
 
 to_calc = [area for area in areas if sum(len(shapes[idx].recs) * rec for idx, rec in enumerate(area[1])) < area[0][0] * area[0][1] and not ((sum(area[1]) * 9) <= area[0][0] * area[0][1])]
 
-print(len(to_calc)) # = 0
+print(len(to_calc)) # = 0, proof that no further calulcations are needed
 print(fits)
 
 exit(0)
